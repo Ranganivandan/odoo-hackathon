@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="file"] { margin-bottom: 10px; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .result { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px; }
+        .error { background: #f8d7da; color: #721c24; }
+        .success { background: #d4edda; color: #155724; }
+        pre { white-space: pre-wrap; word-wrap: break-word; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>OCR Test Page</h1>
+        <p>Test the OCR functionality directly from the frontend.</p>
+        
+        <div class="form-group">
+            <label for="receiptFile">Select Receipt Image:</label>
+            <input type="file" id="receiptFile" accept="image/*,.pdf" />
+        </div>
+        
+        <button id="testOCR" onclick="testOCR()" disabled>Test OCR</button>
+        
+        <div id="result" class="result" style="display: none;">
+            <h3>OCR Result:</h3>
+            <pre id="resultContent"></pre>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('receiptFile');
+        const testButton = document.getElementById('testOCR');
+        const resultDiv = document.getElementById('result');
+        const resultContent = document.getElementById('resultContent');
+
+        fileInput.addEventListener('change', function() {
+            testButton.disabled = !this.files[0];
+        });
+
+        async function testOCR() {
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('Please select a file first');
+                return;
+            }
+
+            testButton.disabled = true;
+            testButton.textContent = 'Processing...';
+            resultDiv.style.display = 'none';
+
+            try {
+                console.log('🔍 Testing OCR with file:', file.name);
+                
+                const formData = new FormData();
+                formData.append('receipt', file);
+
+                const response = await fetch('/api/ocr/extract-receipt', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Authorization': 'Bearer ' + getAuthToken() // You'll need to implement this
+                    }
+                });
+
+                const data = await response.json();
+                console.log('📄 OCR Response:', data);
+
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultContent.textContent = JSON.stringify(data, null, 2);
+                } else {
+                    resultDiv.className = 'result error';
+                    resultContent.textContent = `Error: ${data.message || 'Unknown error'}`;
+                }
+            } catch (error) {
+                console.error('❌ OCR Test Failed:', error);
+                resultDiv.className = 'result error';
+                resultContent.textContent = `Error: ${error.message}`;
+            } finally {
+                testButton.disabled = false;
+                testButton.textContent = 'Test OCR';
+                resultDiv.style.display = 'block';
+            }
+        }
+
+        function getAuthToken() {
+            // This is a placeholder - you'll need to implement proper auth token retrieval
+            // For testing, you might want to hardcode a token or get it from localStorage
+            return localStorage.getItem('authToken') || 'YOUR_JWT_TOKEN_HERE';
+        }
+    </script>
+</body>
+</html>
