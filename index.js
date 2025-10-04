@@ -2,20 +2,26 @@ const express = require("express");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
-
+const cookieParser = require("cookie-parser");
 dotenv.config();
-
 const app = express();
+
+app.use(cookieParser());
+
 // Middlewares
 app.use(cors());
 app.use(express.json());
 
+// Import auth middleware
 const { auth, authorizeRoles } = require("./middleware/middleware");
+
+// Import routes
 const authRoutes = require("./routes/userRoutes");
-const Expenserouter = require("../backend/routes/Expense");
-const Adminroute = require("../backend/routes/Admin");
-const Managerroute = require("../backend/routes/Manager");
-const Employeeroute = require("../backend/routes/Employee");
+const ExpenseRoutes = require("./routes/Expense");
+const AdminRoutes = require("./routes/Admin");
+const ManagerRoutes = require("./routes/Manager");
+const EmployeeRoutes = require("./routes/Employee");
+
 // DB Connection
 mongoose
   .connect(process.env.MONGO_URI, {
@@ -30,18 +36,21 @@ app.get("/", (req, res) => {
   res.send("🚀 Expense Management API is running...");
 });
 
-app.use("/api/auth", authRoutes);
+// Mount all routes
+app.use("/api/auth", authRoutes); // Signup / Signin
+app.use("/api/expenses", ExpenseRoutes); // Expense-related routes
+app.use("/api/admin", AdminRoutes); // Admin routes (create user, view expenses)
+app.use("/api/manager", ManagerRoutes); // Manager routes (approve/reject)
+app.use("/api/employee", EmployeeRoutes); // Employee routes (create/view expenses)
 
-// Protected test routes
-app.get("/api/admin", auth, authorizeRoles("Admin"), (req, res) => {
+// Optional: role test routes
+app.get("/api/admin/test", auth, authorizeRoles("Admin"), (req, res) => {
   res.send("Welcome Admin ✅");
 });
-
-app.get("/api/manager", auth, authorizeRoles("Manager"), (req, res) => {
+app.get("/api/manager/test", auth, authorizeRoles("Manager"), (req, res) => {
   res.send("Welcome Manager ✅");
 });
-
-app.get("/api/employee", auth, authorizeRoles("Employee"), (req, res) => {
+app.get("/api/employee/test", auth, authorizeRoles("Employee"), (req, res) => {
   res.send("Welcome Employee ✅");
 });
 

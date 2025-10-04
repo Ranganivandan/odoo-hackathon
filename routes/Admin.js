@@ -8,10 +8,11 @@ const router = express.Router();
 // Create new user (Employee / Manager)
 router.post("/create-user", auth, authorizeRoles("Admin"), async (req, res) => {
   try {
-    const { name, email, password, role, managerId } = req.body;
+    const { name, email, password, role } = req.body;
 
     const bcrypt = require("bcryptjs");
     const hashedPassword = await bcrypt.hash(password, 10);
+    // console.log(req);
 
     const user = new User({
       name,
@@ -19,7 +20,7 @@ router.post("/create-user", auth, authorizeRoles("Admin"), async (req, res) => {
       password: hashedPassword,
       role,
       company: req.user.company,
-      manager: managerId || null,
+      manager: null,
     });
 
     await user.save();
@@ -33,6 +34,8 @@ router.post("/create-user", auth, authorizeRoles("Admin"), async (req, res) => {
 // Get all users of company
 router.get("/users", auth, authorizeRoles("Admin"), async (req, res) => {
   try {
+    console.log("hello");
+
     const users = await User.find({ company: req.user.company });
     res.json(users);
   } catch (err) {

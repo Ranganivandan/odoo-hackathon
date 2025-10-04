@@ -7,7 +7,7 @@ const Company = require("../Models/Company");
 
 const router = express.Router();
 
-// ✅ Signup (create company + admin OR employee under a company)
+// ✅ Signup (create company + admin)
 router.post("/signup", async (req, res) => {
   try {
     const { name, email, password, role, companyName, country, currency } =
@@ -16,7 +16,6 @@ router.post("/signup", async (req, res) => {
     let company;
 
     if (role === "Admin") {
-      // If first signup -> create company
       company = new Company({ name: companyName, country, currency });
       await company.save();
     } else {
@@ -40,11 +39,20 @@ router.post("/signup", async (req, res) => {
     company.admin = user._id;
     await company.save();
 
+    // Create JWT token
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1d",
     });
 
-    res.status(201).json({ token, user });
+    // Store token in HTTP-only cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // only HTTPS in prod
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      sameSite: "strict",
+    });
+
+    res.status(201).json({ message: "Signup successful", user });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -66,7 +74,15 @@ router.post("/signin", async (req, res) => {
       expiresIn: "1d",
     });
 
-    res.json({ token, user });
+    // Store token in HTTP-only cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 24 * 60 * 60 * 1000,
+      sameSite: "strict",
+    });
+
+    res.json({ message: "Signin successful", user });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

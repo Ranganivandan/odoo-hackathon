@@ -3,12 +3,16 @@ const User = require("../Models/User");
 
 const auth = async (req, res, next) => {
   try {
-    const token = req.header("Authorization")?.replace("Bearer ", "");
+    // Get token from cookies
+    const token = req.cookies?.token;
+    console.log(token);
+
     if (!token)
       return res
         .status(401)
         .json({ message: "No token, authorization denied" });
 
+    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id);
 
